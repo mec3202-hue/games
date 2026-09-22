@@ -1,4 +1,4 @@
-# ⛳ 9 Card Golf
+#  9 Card Golf
 
 A browser version of 9 Card Golf (the variant described below), with one or
 two computer opponents.
