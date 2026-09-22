@@ -1,0 +1,170 @@
+:root {
+  --felt: #1f6b43;
+  --felt-dark: #17543a;
+  --panel: #fdfaf2;
+  --ink: #1d1d1d;
+  --red: #c62828;
+  --gold: #ffd54f;
+  --card-w: 64px;
+  --card-h: 90px;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--felt);
+  color: #fff;
+  min-height: 100vh;
+}
+
+header { text-align: center; padding: 8px 16px 0; }
+h1 { margin: 8px 0; font-size: 1.8rem; }
+h2 { font-size: 1.1rem; margin: 12px 0 6px; }
+
+button {
+  font: inherit;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #0003;
+  background: #eee;
+  cursor: pointer;
+}
+button.primary { background: var(--gold); font-weight: bold; }
+
+/* ---------- setup screen ---------- */
+
+.panel {
+  max-width: 420px;
+  margin: 16px auto;
+  padding: 16px 20px;
+  background: var(--panel);
+  color: var(--ink);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.panel label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.panel fieldset { border: 1px solid #ccc; border-radius: 8px; display: flex; gap: 24px; }
+.panel input[type="text"], .panel select { font: inherit; padding: 4px 6px; }
+.rules { padding-left: 20px; line-height: 1.4; }
+
+/* ---------- the table ---------- */
+
+#table {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  grid-template-areas:
+    "opponents side"
+    "center    side"
+    "status    side"
+    "holeover  side"
+    "me        side";
+  gap: 12px 24px;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 12px 16px 24px;
+  align-items: start;
+}
+#opponents { grid-area: opponents; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+#center { grid-area: center; display: flex; justify-content: center; gap: 24px; }
+#status { grid-area: status; text-align: center; min-height: 2.6em; margin: 0; font-size: 1.05rem; }
+#hole-over { grid-area: holeover; }
+#me { grid-area: me; display: flex; justify-content: center; }
+#side { grid-area: side; background: var(--felt-dark); border-radius: 12px; padding: 8px 12px 12px; }
+
+@media (max-width: 760px) {
+  #table {
+    grid-template-columns: 1fr;
+    grid-template-areas: "opponents" "center" "status" "holeover" "me" "side";
+  }
+}
+
+.pile { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pile-label { font-size: 0.85rem; opacity: 0.85; }
+
+/* ---------- players ---------- */
+
+.player {
+  padding: 8px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+}
+.player.active { border-color: var(--gold); background: #ffffff14; }
+.player-header { display: flex; gap: 8px; align-items: baseline; margin-bottom: 6px; }
+.player-header .showing { margin-left: auto; font-size: 0.85rem; opacity: 0.85; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, var(--card-w));
+  gap: 6px;
+}
+#opponents .player { --card-w: 46px; --card-h: 64px; font-size: 0.9rem; }
+#opponents .card .rank { font-size: 1rem; }
+
+/* ---------- cards ---------- */
+
+.card {
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  box-shadow: 0 2px 4px #0005;
+}
+.card.face { background: #fff; color: var(--ink); }
+.card.face.red { color: var(--red); }
+.card .rank { font-size: 1.4rem; font-weight: bold; line-height: 1; }
+.card .suit { font-size: 1.1rem; }
+.card.joker .suit { font-size: 0.7rem; font-weight: bold; }
+
+.card.back {
+  background:
+    repeating-linear-gradient(45deg, #b71c1c 0 6px, #d32f2f 6px 12px);
+  border: 3px solid #fff;
+}
+.card.back.empty-deck { opacity: 0.3; }
+
+.card.empty {
+  border: 2px dashed #ffffff55;
+  box-shadow: none;
+}
+
+.card.cleared { opacity: 0.25; box-shadow: none; }
+
+.card.clickable {
+  cursor: pointer;
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+.card.clickable:hover { transform: translateY(-3px); }
+
+/* ---------- end of hole ---------- */
+
+#hole-over {
+  background: var(--panel);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 4px 16px 16px;
+  text-align: center;
+}
+#hole-over ul { list-style: none; padding: 0; }
+.winner { font-size: 1.4rem; }
+
+/* ---------- scorecard and log ---------- */
+
+.table-scroll { overflow-x: auto; }
+#scorecard { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+#scorecard th, #scorecard td { padding: 3px 3px; text-align: center; border-bottom: 1px solid #ffffff22; }
+#scorecard tr th:first-child { text-align: left; }
+#scorecard th.current { color: var(--gold); }
+#scorecard .total { font-weight: bold; }
+
+#log { list-style: disc; padding-left: 20px; font-size: 0.85rem; line-height: 1.4; margin: 0 0 12px; }
+#log li:first-child { font-weight: bold; }

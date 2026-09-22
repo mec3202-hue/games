@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>9 Card Golf</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>⛳ 9 Card Golf</h1>
+  </header>
+
+  <!-- Screen 1: choose opponents -->
+  <section id="setup" class="panel">
+    <h2>New game</h2>
+    <label>Your name
+      <input id="player-name" type="text" value="You" maxlength="12">
+    </label>
+
+    <fieldset>
+      <legend>Opponents</legend>
+      <label><input type="radio" name="bot-count" value="1" checked> 1 bot</label>
+      <label><input type="radio" name="bot-count" value="2"> 2 bots</label>
+    </fieldset>
+
+    <label>Birdie is
+      <select id="bot1-difficulty">
+        <option value="easy">Easy</option>
+        <option value="smart" selected>Smart</option>
+      </select>
+    </label>
+    <label id="bot2-row" hidden>Bogey is
+      <select id="bot2-difficulty">
+        <option value="easy" selected>Easy</option>
+        <option value="smart">Smart</option>
+      </select>
+    </label>
+
+    <label>Who tees off first?
+      <select id="first-player">
+        <option value="human">Me</option>
+        <option value="random">Random</option>
+      </select>
+    </label>
+
+    <button id="start-button" class="primary">Start game</button>
+
+    <details>
+      <summary>How to play</summary>
+      <ul class="rules">
+        <li>Everyone gets 9 cards face down in a 3×3 grid. Lowest score after 9 holes wins.</li>
+        <li>On your turn, either <b>draw from the deck</b> or <b>take the top discard</b>.</li>
+        <li>Drawn from the deck: swap it with any of your cards, <i>or</i> throw it away and flip one of your face-down cards.</li>
+        <li>Taken from the discard: you must swap it with one of your cards.</li>
+        <li>The hole ends as soon as someone has all 9 cards face up. Everyone else flips theirs.</li>
+        <li>Points: A = 1, 2–10 = face value, J/Q = 10, K = 0, Joker = −4.</li>
+        <li>Three matching cards in a row or column are cleared (worth 0) — once per hole.</li>
+        <li>Whoever scored the most on a hole goes first on the next.</li>
+      </ul>
+    </details>
+  </section>
+
+  <!-- Screen 2: the table -->
+  <main id="table" hidden>
+    <div id="opponents"></div>
+
+    <div id="center">
+      <div class="pile">
+        <div id="draw-pile" class="card back"></div>
+        <span class="pile-label">Deck <span id="deck-count"></span></span>
+      </div>
+      <div class="pile">
+        <div id="discard-pile"></div>
+        <span class="pile-label">Discard</span>
+      </div>
+      <div class="pile">
+        <div id="held-card"></div>
+        <span class="pile-label" id="held-label">In hand</span>
+      </div>
+    </div>
+
+    <p id="status"></p>
+    <div id="hole-over" hidden></div>
+
+    <div id="me"></div>
+
+    <section id="side">
+      <h2>Scorecard</h2>
+      <div class="table-scroll"><table id="scorecard"></table></div>
+      <h2>What happened</h2>
+      <ol id="log"></ol>
+      <button id="quit-button">Quit to menu</button>
+    </section>
+  </main>
+
+  <!-- Order matters: later files use functions from earlier ones. -->
+  <script src="js/cards.js"></script>
+  <script src="js/rules.js"></script>
+  <script src="js/bots.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
