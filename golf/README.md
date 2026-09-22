@@ -11,21 +11,20 @@ to install anything.
 On the start screen, pick **1 or 2 bots** and how tough each one is:
 
 - **Easy** – plays by simple rules of thumb and makes plenty of mistakes.
-- **Smart** – weighs every possible move and avoids ending a hole when it's
-  behind. In testing it beats the Easy bot about 9 games out of 10.
+- **Smart** – weighs every possible move and avoids ending the game when it's
+  behind. In testing it beats the Easy bot about 7 games out of 10.
 
 ## Rules (this variant)
 
-- Each player gets 9 cards **face down** in a 3×3 grid. Lowest score after
-  9 holes wins.
-- On your turn, either:
-  - **Draw from the deck.** Swap it with any of your cards (face up or face
-    down), *or* throw it away and flip one of your face-down cards.
-  - **Take the top discard** and swap it with any of your cards.
-- The swapped-out card goes on the discard pile, face up.
-- The hole ends the moment someone has all 9 cards face up. Everyone else flips
-  their remaining cards and the hole is scored.
-- Whoever scored the **most** on a hole goes first on the next one.
+- Each player gets 9 cards **face down** in a 3×3 grid, then flips any **2**
+  of them face up.
+- The first player's opening card is drawn from the deck for them.
+- On your turn, either **draw from the deck** or **take the top discard** —
+  then you **must** swap it with one of your cards (face up or face down).
+  The swapped-out card goes on the discard pile, face up.
+- The game is a single round. The moment someone has all 9 cards face up, the
+  game ends: everyone else flips their remaining cards, and the **lowest score
+  wins**.
 
 | Card | Points |
 | --- | --- |
@@ -36,7 +35,7 @@ On the start screen, pick **1 or 2 bots** and how tough each one is:
 | Joker | −4 |
 
 **Three of a kind:** three matching cards in a row or column are cleared and
-count as 0. You can only do this once per hole. (The game clears lines for you
+count as 0. You can only do this once per game. (The game clears lines for you
 automatically. Kings are never cleared, because they're already worth 0 and
 you'd waste your one clear.)
 
@@ -55,8 +54,8 @@ The files are loaded in this order, and each one builds on the ones before it:
 | `tests/rules.test.js` | Automated checks that the rules and bots work |
 
 The main idea: all the game's information lives in one `game` object.
-`rules.js` has functions that change it (`drawFromDeck`, `replaceCard`,
-`flipCard`, …), and after every change `ui.js` calls `render()` to redraw the
+`rules.js` has functions that change it (`revealStartingCard`,
+`drawFromDeck`, `replaceCard`, …), and after every change `ui.js` calls `render()` to redraw the
 whole table from that object.
 
 ## Running the tests

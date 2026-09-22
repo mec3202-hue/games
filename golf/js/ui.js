@@ -10,6 +10,7 @@ var Golf = globalThis.Golf || (globalThis.Golf = {});
   // Open index.html?fast to make the bots play quickly (useful while testing).
   const BOT_DELAY = location.search.includes('fast') ? 30 : 900;
   const BOT_NAMES = ['Birdie', 'Bogey'];
+  const HUMAN = 0; // the human is always player 0
 
   let game = null;
   let botTimer = null;
@@ -28,22 +29,34 @@ var Golf = globalThis.Golf || (globalThis.Golf = {});
     });
   });
 
-  $('start-button').addEventListener('click', function () {
+  // Start a game using whatever is chosen on the setup screen.
+  function startGame() {
     const players = [Golf.createPlayer($('player-name').value.trim() || 'You', false)];
     const difficulties = [$('bot1-difficulty').value, $('bot2-difficulty').value];
     for (let i = 0; i < botCount(); i++) {
       players.push(Golf.createPlayer(BOT_NAMES[i], true, difficulties[i]));
     }
     const first = $('first-player').value === 'human'
-      ? 0
+      ? HUMAN
       : Math.floor(Math.random() * players.length);
 
+    clearTimeout(botTimer);
+    botTimer = null;
     game = Golf.createGame(players, first);
-    Golf.startHole(game);
+
+    // The bots flip their two starting cards right away; then it's your pick.
+    game.players.forEach(function (player, i) {
+      while (player.isBot && Golf.needsToReveal(game, i)) {
+        Golf.revealStartingCard(game, i, Golf.botChooseReveal(game, player));
+      }
+    });
+
     $('setup').hidden = true;
     $('table').hidden = false;
     render();
-  });
+  }
+
+  $('start-button').addEventListener('click', startGame);
 
   $('quit-button').addEventListener('click', function () {
     clearTimeout(botTimer);
@@ -90,33 +103,34 @@ var Golf = globalThis.Golf || (globalThis.Golf = {});
     return el;
   }
 
-  // Can the human click this grid position right now?
-  function canClickSlot(slot) {
-    if (!isHumanTurn() || slot.cleared) return false;
-    if (game.phase === 'holding') return true;
-    if (game.phase === 'flip') return !slot.faceUp;
-    return false;
+  function isHumanTurn() {
+    return game && game.current === HUMAN &&
+      (game.phase === 'turn' || game.phase === 'holding');
   }
 
-  function isHumanTurn() {
-    return game && !Golf.currentPlayer(game).isBot &&
-      (game.phase === 'turn' || game.phase === 'holding' || game.phase === 'flip');
+  // Can the human click this grid position right now?
+  function canClickSlot(slot) {
+    if (slot.cleared) return false;
+    if (Golf.needsToReveal(game, HUMAN)) return !slot.faceUp;
+    return isHumanTurn() && game.phase === 'holding';
   }
 
   function playerElement(player, index) {
-    const isMe = !player.isBot;
+    const isMe = index === HUMAN;
     const box = document.createElement('div');
     box.className = 'player' + (isMe ? ' me' : '');
-    if (index === game.current && (game.phase === 'turn' || game.phase === 'holding' || game.phase === 'flip')) {
+    if (index === game.current && (game.phase === 'turn' || game.phase === 'holding')) {
       box.classList.add('active');
     }
 
     const header = document.createElement('div');
     header.className = 'player-header';
     const tag = player.isBot ? ' <small>(' + (player.difficulty === 'easy' ? 'Easy' : 'Smart') + ' bot)</small>' : '';
-    const showing = Golf.gridScore(player.grid, true);
+    const points = game.phase === 'gameOver'
+      ? player.score + ' points'
+      : 'showing ' + Golf.gridScore(player.grid, true);
     header.innerHTML = '<b>' + escapeHtml(player.name) + '</b>' + tag +
-      '<span class="showing">showing ' + showing + '</span>';
+      '<span class="showing">' + points + '</span>';
     box.appendChild(header);
 
     const grid = document.createElement('div');
@@ -149,7 +163,7 @@ var Golf = globalThis.Golf || (globalThis.Golf = {});
     $('me').innerHTML = '';
     game.players.forEach(function (player, i) {
       const el = playerElement(player, i);
-      (player.isBot ? $('opponents') : $('me')).appendChild(el);
+      (i === HUMAN ? $('me') : $('opponents')).appendChild(el);
     });
 
     // Deck
@@ -163,7 +177,7 @@ var Golf = globalThis.Golf || (globalThis.Golf = {});
     const discardEl = top ? cardElement(top) : emptyElement();
     discardEl.id = 'discard-pile';
     const discardClickable = isHumanTurn() &&
-      (game.phase === 'turn' && top || game.phase === 'holding');
+      (game.phase === 'turn' && top || game.phase === 'holding' && game.heldFrom === 'discard');
     if (discardClickable) discardEl.classList.add('clickable');
     discardEl.addEventListener('click', onDiscardClick);
     $('discard-pile').replaceWith(discardEl);
@@ -173,91 +187,58 @@ var Golf = globalThis.Golf || (globalThis.Golf = {});
     heldEl.id = 'held-card';
     $('held-card').replaceWith(heldEl);
     $('held-label').textContent = game.held
-      ? Golf.currentPlayer(game).name + (Golf.currentPlayer(game).isBot ? ' holds' : ' hold')
+      ? Golf.currentPlayer(game).name + (game.current === HUMAN ? ' hold' : ' holds')
       : 'In hand';
 
     $('status').textContent = statusText();
-    renderHoleOver();
-    renderScorecard();
+    renderGameOver();
     renderLog();
     scheduleBot();
   }
 
   function statusText() {
+    if (game.phase === 'gameOver') return '';
+    if (game.phase === 'reveal') {
+      const left = Golf.STARTING_FLIPS - Golf.faceUpCount(game.players[HUMAN].grid);
+      return 'Flip ' + left + ' of your cards to start.';
+    }
+
     const player = Golf.currentPlayer(game);
-    if (game.phase === 'holeOver' || game.phase === 'gameOver') return '';
     if (player.isBot) return player.name + ' is thinking…';
 
     const top = Golf.topDiscard(game);
-    switch (game.phase) {
-      case 'turn':
-        return top
-          ? 'Your turn! Draw from the deck, or take the ' + Golf.cardLabel(top) + ' from the discard pile.'
-          : 'Your turn! Draw from the deck.';
-      case 'holding':
-        return game.heldFrom === 'deck'
-          ? 'You drew ' + Golf.cardLabel(game.held) + '. Click one of your cards to swap it in, or click the discard pile to throw it away.'
-          : 'Click one of your cards to swap in the ' + Golf.cardLabel(game.held) + '. (Click the discard pile to put it back.)';
-      case 'flip':
-        return 'Now click one of your face-down cards to flip it over.';
+    if (game.phase === 'turn') {
+      return top
+        ? 'Your turn! Draw from the deck, or take the ' + Golf.cardLabel(top) + ' from the discard pile.'
+        : 'Your turn! Draw from the deck.';
     }
-    return '';
+    // phase is 'holding'
+    return game.heldFrom === 'deck'
+      ? 'You drew ' + Golf.cardLabel(game.held) + '. Click one of your cards to swap it in.'
+      : 'Click one of your cards to swap in the ' + Golf.cardLabel(game.held) + '. (Click the discard pile to put it back.)';
   }
 
-  function renderHoleOver() {
-    const box = $('hole-over');
-    if (game.phase !== 'holeOver' && game.phase !== 'gameOver') {
+  function renderGameOver() {
+    const box = $('game-over');
+    if (game.phase !== 'gameOver') {
       box.hidden = true;
       box.innerHTML = '';
       return;
     }
     box.hidden = false;
 
-    const ender = game.players[game.roundEnder];
-    let html = '<h2>Hole ' + game.hole + ' finished</h2><p>' + escapeHtml(ender.name) +
-      ' went out.</p><ul>';
-    game.players.forEach(function (p) {
-      html += '<li>' + escapeHtml(p.name) + ': <b>' + p.scores[p.scores.length - 1] +
-        '</b> this hole, ' + Golf.totalScore(p) + ' total</li>';
-    });
-    html += '</ul>';
+    const ranked = game.players.slice().sort(function (a, b) { return a.score - b.score; });
+    const winners = Golf.winners(game);
+    const names = winners.map(function (p) { return escapeHtml(p.name); }).join(' and ');
 
-    if (game.phase === 'gameOver') {
-      const winners = Golf.winners(game);
-      const names = winners.map(function (p) { return escapeHtml(p.name); }).join(' and ');
-      html += '<h2 class="winner">🏆 ' + names + (winners.length > 1 ? ' tie!' : ' wins!') + '</h2>';
-      html += '<button id="next-button" class="primary">Play again</button>';
-    } else {
-      const next = game.players[game.startingPlayer];
-      html += '<p>' + escapeHtml(next.name) + ' had the highest score, so tees off next.</p>';
-      html += '<button id="next-button" class="primary">Tee off hole ' + (game.hole + 1) + '</button>';
-    }
+    let html = '<h2 class="winner">🏆 ' + names + (winners.length > 1 ? ' tie!' : ' wins!') + '</h2>';
+    html += '<p>' + escapeHtml(game.players[game.wentOut].name) + ' went out.</p><ol>';
+    ranked.forEach(function (p) {
+      html += '<li>' + escapeHtml(p.name) + ': <b>' + p.score + '</b> points</li>';
+    });
+    html += '</ol><button id="again-button" class="primary">Play again</button>';
     box.innerHTML = html;
-
-    $('next-button').addEventListener('click', function () {
-      if (game.phase === 'gameOver') {
-        $('quit-button').click();
-      } else {
-        Golf.startHole(game);
-        render();
-      }
-    });
-  }
-
-  function renderScorecard() {
-    let html = '<tr><th></th>';
-    for (let h = 1; h <= Golf.HOLES; h++) {
-      html += '<th' + (h === game.hole ? ' class="current"' : '') + '>' + h + '</th>';
-    }
-    html += '<th>Total</th></tr>';
-    game.players.forEach(function (p) {
-      html += '<tr><th>' + escapeHtml(p.name) + '</th>';
-      for (let h = 0; h < Golf.HOLES; h++) {
-        html += '<td>' + (h < p.scores.length ? p.scores[h] : '') + '</td>';
-      }
-      html += '<td class="total">' + Golf.totalScore(p) + '</td></tr>';
-    });
-    $('scorecard').innerHTML = html;
+    $('again-button').addEventListener('click', startGame);
   }
 
   function renderLog() {
@@ -286,44 +267,37 @@ var Golf = globalThis.Golf || (globalThis.Golf = {});
     if (!isHumanTurn()) return;
     if (game.phase === 'turn') {
       act(function () { Golf.takeDiscard(game); });
-    } else if (game.phase === 'holding') {
-      act(function () {
-        if (game.heldFrom === 'deck') Golf.discardHeld(game);
-        else Golf.returnDiscard(game);
-      });
+    } else if (game.heldFrom === 'discard') {
+      act(function () { Golf.returnDiscard(game); });
     }
   }
 
   function onSlotClick(index) {
-    if (game.phase === 'holding') act(function () { Golf.replaceCard(game, index); });
-    else if (game.phase === 'flip') act(function () { Golf.flipCard(game, index); });
+    if (game.phase === 'reveal') act(function () { Golf.revealStartingCard(game, HUMAN, index); });
+    else if (game.phase === 'holding') act(function () { Golf.replaceCard(game, index); });
   }
 
   // ---------- bot turns ----------
 
   function scheduleBot() {
-    if (botTimer || !game || game.phase !== 'turn') return;
+    if (botTimer || !game) return;
     const bot = Golf.currentPlayer(game);
-    if (!bot.isBot) return;
+    if (!bot.isBot || (game.phase !== 'turn' && game.phase !== 'holding')) return;
 
-    // Step 1: pick up a card.
+    // Step 2: swap the card in hand into the grid.
+    function playHeldCard() {
+      Golf.replaceCard(game, Golf.botChooseMove(game, bot).index);
+      botTimer = null;
+      render(); // this schedules the next bot, if it's a bot's turn
+    }
+
+    // Step 1: pick up a card (skipped on the opening turn, which is drawn for you).
     botTimer = setTimeout(function () {
+      if (game.phase === 'holding') return playHeldCard();
       if (Golf.botChooseSource(game, bot) === 'discard') Golf.takeDiscard(game);
       else Golf.drawFromDeck(game);
       render();
-
-      // Step 2: decide what to do with it.
-      botTimer = setTimeout(function () {
-        const move = Golf.botChooseMove(game, bot);
-        if (move.type === 'flip') {
-          Golf.discardHeld(game);
-          Golf.flipCard(game, move.index);
-        } else {
-          Golf.replaceCard(game, move.index);
-        }
-        botTimer = null;
-        render(); // this schedules the next bot, if it's a bot's turn
-      }, BOT_DELAY);
+      botTimer = setTimeout(playHeldCard, BOT_DELAY);
     }, BOT_DELAY);
   }
 })();

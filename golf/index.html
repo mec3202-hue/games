@@ -37,7 +37,7 @@
       </select>
     </label>
 
-    <label>Who tees off first?
+    <label>Who goes first?
       <select id="first-player">
         <option value="human">Me</option>
         <option value="random">Random</option>
@@ -49,14 +49,11 @@
     <details>
       <summary>How to play</summary>
       <ul class="rules">
-        <li>Everyone gets 9 cards face down in a 3×3 grid. Lowest score after 9 holes wins.</li>
-        <li>On your turn, either <b>draw from the deck</b> or <b>take the top discard</b>.</li>
-        <li>Drawn from the deck: swap it with any of your cards, <i>or</i> throw it away and flip one of your face-down cards.</li>
-        <li>Taken from the discard: you must swap it with one of your cards.</li>
-        <li>The hole ends as soon as someone has all 9 cards face up. Everyone else flips theirs.</li>
+        <li>Everyone gets 9 cards face down in a 3×3 grid, then flips any 2 of them face up.</li>
+        <li>On your turn, either <b>draw from the deck</b> or <b>take the top discard</b> — then you must swap it with one of your cards (face up or face down). The first player's opening card is drawn from the deck for them.</li>
+        <li>The game ends as soon as someone has all 9 cards face up. Everyone else flips theirs, and the lowest score wins.</li>
         <li>Points: A = 1, 2–10 = face value, J/Q = 10, K = 0, Joker = −4.</li>
-        <li>Three matching cards in a row or column are cleared (worth 0) — once per hole.</li>
-        <li>Whoever scored the most on a hole goes first on the next.</li>
+        <li>Three matching cards in a row or column are cleared (worth 0) — once per game.</li>
       </ul>
     </details>
   </section>
@@ -81,13 +78,11 @@
     </div>
 
     <p id="status"></p>
-    <div id="hole-over" hidden></div>
+    <div id="game-over" hidden></div>
 
     <div id="me"></div>
 
     <section id="side">
-      <h2>Scorecard</h2>
-      <div class="table-scroll"><table id="scorecard"></table></div>
       <h2>What happened</h2>
       <ol id="log"></ol>
       <button id="quit-button">Quit to menu</button>

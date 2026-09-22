@@ -56,12 +56,12 @@ button.primary { background: var(--gold); font-weight: bold; }
 
 #table {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 1fr 300px;
   grid-template-areas:
     "opponents side"
     "center    side"
     "status    side"
-    "holeover  side"
+    "gameover  side"
     "me        side";
   gap: 12px 24px;
   max-width: 1040px;
@@ -72,14 +72,14 @@ button.primary { background: var(--gold); font-weight: bold; }
 #opponents { grid-area: opponents; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
 #center { grid-area: center; display: flex; justify-content: center; gap: 24px; }
 #status { grid-area: status; text-align: center; min-height: 2.6em; margin: 0; font-size: 1.05rem; }
-#hole-over { grid-area: holeover; }
+#game-over { grid-area: gameover; }
 #me { grid-area: me; display: flex; justify-content: center; }
 #side { grid-area: side; background: var(--felt-dark); border-radius: 12px; padding: 8px 12px 12px; }
 
 @media (max-width: 760px) {
   #table {
     grid-template-columns: 1fr;
-    grid-template-areas: "opponents" "center" "status" "holeover" "me" "side";
+    grid-template-areas: "opponents" "center" "status" "gameover" "me" "side";
   }
 }
 
@@ -145,26 +145,20 @@ button.primary { background: var(--gold); font-weight: bold; }
 }
 .card.clickable:hover { transform: translateY(-3px); }
 
-/* ---------- end of hole ---------- */
+/* ---------- end of game ---------- */
 
-#hole-over {
+#game-over {
   background: var(--panel);
   color: var(--ink);
   border-radius: 12px;
   padding: 4px 16px 16px;
   text-align: center;
 }
-#hole-over ul { list-style: none; padding: 0; }
+#game-over ol { display: inline-block; text-align: left; }
+#game-over button { display: block; margin: 0 auto; }
 .winner { font-size: 1.4rem; }
 
-/* ---------- scorecard and log ---------- */
-
-.table-scroll { overflow-x: auto; }
-#scorecard { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
-#scorecard th, #scorecard td { padding: 3px 3px; text-align: center; border-bottom: 1px solid #ffffff22; }
-#scorecard tr th:first-child { text-align: left; }
-#scorecard th.current { color: var(--gold); }
-#scorecard .total { font-weight: bold; }
+/* ---------- log ---------- */
 
 #log { list-style: disc; padding-left: 20px; font-size: 0.85rem; line-height: 1.4; margin: 0 0 12px; }
 #log li:first-child { font-weight: bold; }

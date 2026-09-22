@@ -1,15 +1,15 @@
 // bots.js — the computer players.
 //
-// A bot's turn has two decisions, just like yours:
+// Before play, a bot picks two cards to flip (chooseReveal). After that,
+// a bot's turn has two decisions, just like yours:
 //   1. chooseSource: take the discard, or draw from the deck?
-//   2. chooseMove:   with the card in hand, which card to replace
-//                    (or, if it came from the deck, throw it away and flip)?
+//   2. chooseMove:   which card in the grid to swap the new card with?
 //
 // There are two personalities:
 //   • Easy  – follows a few simple rules of thumb, with some randomness.
 //   • Smart – "imagines" every possible move, estimates the score it would
 //             end up with, and picks the best one. It also tries not to end
-//             the hole when it's behind.
+//             the game when it's behind.
 var Golf = globalThis.Golf || (globalThis.Golf = {});
 
 // The average value of a card in the deck: (4 suits × 75 points − 8 for the
@@ -37,24 +37,14 @@ function easyChooseSource(game) {
   return top && Golf.cardValue(top) <= 2 ? 'discard' : 'deck';
 }
 
-function easyChooseMove(game, player, card, canFlip) {
-  const value = Golf.cardValue(card);
+function easyChooseMove(game, player, card) {
   const high = highestFaceUp(player.grid);
-  const faceDown = Golf.faceDownIndexes(player.grid);
-
-  // Swap out a known high card if this one is lower.
-  if (high !== -1 && Golf.cardValue(player.grid[high].card) > value && value <= 6) {
+  // Swap out a known card if this one is lower...
+  if (high !== -1 && Golf.cardValue(player.grid[high].card) > Golf.cardValue(card)) {
     return { type: 'replace', index: high };
   }
-  // A low card goes on top of a random face-down card.
-  if ((value <= 6 || !canFlip) && faceDown.length > 0) {
-    return { type: 'replace', index: pickRandom(faceDown) };
-  }
-  if (canFlip) {
-    return { type: 'flip', index: pickRandom(faceDown) };
-  }
-  // Must place a card from the discard pile somewhere.
-  return { type: 'replace', index: high };
+  // ...otherwise put it on top of a random face-down card.
+  return { type: 'replace', index: pickRandom(Golf.faceDownIndexes(player.grid)) };
 }
 
 // ---------- Smart bot ----------
@@ -98,7 +88,7 @@ function estimateScore(grid, hasCleared) {
   return total;
 }
 
-// If a move ends the hole, adjust its rating: good if we're (probably)
+// If a move ends the game, adjust its rating: good if we're (probably)
 // winning, very bad if we're not.
 function endOfHoleAdjustment(game, player, score) {
   const opponents = game.players.filter(function (p) { return p !== player; });
@@ -114,40 +104,28 @@ function rateGrid(game, player, grid) {
   return Golf.allRevealed(grid) ? score + endOfHoleAdjustment(game, player, score) : score;
 }
 
-// All the moves the bot could make with `card`, each with a rating.
-function smartOptions(game, player, card, canFlip) {
+// All the moves the bot could make with `card`, best first.
+function smartOptions(game, player, card) {
   const options = [];
-
   player.grid.forEach(function (slot, i) {
     if (slot.cleared) return;
     const grid = copyGrid(player.grid);
     grid[i] = { card: card, faceUp: true, cleared: false };
     options.push({ type: 'replace', index: i, rating: rateGrid(game, player, grid) });
   });
-
-  if (canFlip) {
-    // Flipping an unknown card doesn't change our estimate on average, but it
-    // could end the hole if it's our last face-down card.
-    const faceDown = Golf.faceDownIndexes(player.grid);
-    const index = pickRandom(faceDown);
-    let rating = estimateScore(player.grid, player.hasCleared);
-    if (faceDown.length === 1) rating += endOfHoleAdjustment(game, player, rating);
-    options.push({ type: 'flip', index: index, rating: rating });
-  }
-
   options.sort(function (a, b) { return a.rating - b.rating; });
   return options;
 }
 
-function smartChooseMove(game, player, card, canFlip) {
-  return smartOptions(game, player, card, canFlip)[0];
+function smartChooseMove(game, player, card) {
+  return smartOptions(game, player, card)[0];
 }
 
 function smartChooseSource(game, player) {
   const top = Golf.topDiscard(game);
   if (!top) return 'deck';
   const now = estimateScore(player.grid, player.hasCleared);
-  const best = smartOptions(game, player, top, false)[0];
+  const best = smartOptions(game, player, top)[0];
   // Take the discard only if it clearly helps; otherwise gamble on the deck.
   return now - best.rating >= 2.5 ? 'discard' : 'deck';
 }
@@ -161,10 +139,15 @@ Golf.botChooseSource = function (game, player) {
 };
 
 Golf.botChooseMove = function (game, player) {
-  const canFlip = game.heldFrom === 'deck';
   return player.difficulty === 'easy'
-    ? easyChooseMove(game, player, game.held, canFlip)
-    : smartChooseMove(game, player, game.held, canFlip);
+    ? easyChooseMove(game, player, game.held)
+    : smartChooseMove(game, player, game.held);
+};
+
+// Which card to flip at the start of the game. Nothing is known yet, so any
+// face-down card will do.
+Golf.botChooseReveal = function (game, player) {
+  return pickRandom(Golf.faceDownIndexes(player.grid));
 };
 
 Golf.estimateScore = estimateScore;
