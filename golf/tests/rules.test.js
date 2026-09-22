@@ -17,6 +17,8 @@ function gridOf(ranks) {
 test('card values', function () {
   const value = function (rank) { return Golf.cardValue({ rank: rank }); };
   assert.strictEqual(value('A'), 1);
+  assert.strictEqual(value('2'), -2);
+  assert.strictEqual(value('3'), 3);
   assert.strictEqual(value('7'), 7);
   assert.strictEqual(value('10'), 10);
   assert.strictEqual(value('J'), 10);
@@ -45,8 +47,9 @@ test('finds a matching row or column, preferring the most valuable', function ()
   assert.deepStrictEqual(Golf.findClearableLine(two), [0, 3, 6]);
 });
 
-test('kings are never cleared and face-down cards do not count', function () {
+test('kings and 2s are never cleared and face-down cards do not count', function () {
   assert.strictEqual(Golf.findClearableLine(gridOf(['K', 'K', 'K', '1', '2', '3', '4', '5', '6'])), null);
+  assert.strictEqual(Golf.findClearableLine(gridOf(['2', '2', '2', '1', '4', '3', '4', '5', '6'])), null);
   const grid = gridOf(['7', '7', '7', '1', '2', '3', '4', '5', '6']);
   grid[2].faceUp = false;
   assert.strictEqual(Golf.findClearableLine(grid), null);
@@ -55,7 +58,7 @@ test('kings are never cleared and face-down cards do not count', function () {
 test('scoring ignores cleared cards', function () {
   const grid = gridOf(['8', '8', '8', 'K', 'JOKER', 'A', 'Q', '2', '3']);
   for (const i of [0, 1, 2]) grid[i].cleared = true;
-  assert.strictEqual(Golf.gridScore(grid), 0 - 4 + 1 + 10 + 2 + 3);
+  assert.strictEqual(Golf.gridScore(grid), 0 - 4 + 1 + 10 - 2 + 3);
 });
 
 // Start a 2-player game and flip everyone's starting cards (spots 0 and 1).
@@ -123,7 +126,7 @@ test('the game ends as soon as someone has everything face up', function () {
 
   assert.strictEqual(game.phase, 'gameOver');
   assert.strictEqual(game.wentOut, 0);
-  assert.strictEqual(a.score, 36);
+  assert.strictEqual(a.score, 32);
   assert.strictEqual(b.score, 86);
   assert.ok(b.grid.every(function (s) { return s.faceUp; }));
   assert.deepStrictEqual(Golf.winners(game), [a]);

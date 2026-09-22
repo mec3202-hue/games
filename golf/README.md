@@ -29,15 +29,16 @@ On the start screen, pick **1 or 2 bots** and how tough each one is:
 | Card | Points |
 | --- | --- |
 | Ace | 1 |
-| 2–10 | face value |
+| 2 | −2 |
+| 3–10 | face value |
 | Jack, Queen | 10 |
 | King | 0 |
 | Joker | −4 |
 
 **Three of a kind:** three matching cards in a row or column are cleared and
 count as 0. You can only do this once per game. (The game clears lines for you
-automatically. Kings are never cleared, because they're already worth 0 and
-you'd waste your one clear.)
+automatically. Kings and 2s are never cleared: Kings are already worth 0, and
+three 2s are worth −6, so clearing them would only make your score worse.)
 
 ## How the code is organized
 

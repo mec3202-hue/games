@@ -70,7 +70,7 @@ Golf.gridScore = function (grid, onlyFaceUp) {
 
 // Find a row or column of three face-up cards with the same rank.
 // Returns the line (array of 3 positions) or null. If several lines match,
-// the one worth the most points is picked. Kings (0) and Jokers (-4) are
+// the one worth the most points is picked. Kings (0), 2s (-2) and Jokers (-4) are
 // never cleared, because clearing them would make your score worse or
 // waste your one clear.
 Golf.findClearableLine = function (grid) {

@@ -14,9 +14,10 @@ Golf.cardValue = function (card) {
     case 'A': return 1;
     case 'J':
     case 'Q': return 10;
+    case '2': return -2;
     case 'K': return 0;
     case 'JOKER': return -4;
-    default: return Number(card.rank); // '2'..'10'
+    default: return Number(card.rank); // '3'..'10'
   }
 };
 

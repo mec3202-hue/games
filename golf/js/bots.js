@@ -12,9 +12,9 @@
 //             the game when it's behind.
 var Golf = globalThis.Golf || (globalThis.Golf = {});
 
-// The average value of a card in the deck: (4 suits × 75 points − 8 for the
-// two Jokers) / 54 cards ≈ 5.4. Bots use this as a guess for face-down cards.
-Golf.UNKNOWN_CARD_VALUE = (4 * 75 - 8) / 54;
+// The average value of a card in the deck: (4 suits × 71 points − 8 for the
+// two Jokers) / 54 cards ≈ 5.1. Bots use this as a guess for face-down cards.
+Golf.UNKNOWN_CARD_VALUE = (4 * 71 - 8) / 54;
 
 function pickRandom(list) {
   return list[Math.floor(Math.random() * list.length)];
